@@ -1,0 +1,1 @@
+from .person_default_kbd import commands_default_keyboard

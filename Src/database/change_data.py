@@ -50,6 +50,7 @@ class Database:
         return back, amt
 
     # == still not in use
+    # noinspection GrazieInspection
     def write_down(self, access_mode: str = 'r') -> None:  # USE CAREFULLY! This can rewrite the WHOLE FILE!!!
         """
         Once again: # USE CAREFULLY!!! This can rewrite the WHOLE FILE (at this stage)!!!
@@ -92,36 +93,60 @@ class Database:
         return 0, 0
 
 
-# == still out of order at this stage
 class BuyerBasket:
-    def __init__(self, buyer_id: str = 'No user') -> None:
-        self.buyer_id = buyer_id
-        self.basket = []
+    def __init__(self) -> None:
+        self.basket = {}
 
-    def get_id(self):
-        return self.buyer_id
+    def new(self, buyer_id: str) -> int:
+        if buyer_id not in self.basket.keys():
+            print('NNNEEEEEEEWWWWWWWWWw')
+            self.basket[buyer_id] = []
+            return 0
+        else:
+            return 1
 
-    def add_item(self, item_id, item_amt) -> str:
-        self.basket.append({'id': item_id, 'amt': item_amt})
-        return 'Ok!'
+    def add_item(self, buyer_id, item: dict) -> str:
+        for own_item in self.basket[buyer_id]:
+            print('KEYS:', item['id'], own_item.keys(), type(item['id']), type(own_item.keys()))
+            if item['id'] in own_item.keys():
+                own_item['amt'] += item['amt']
+                return f'Кол-во позиции {item["name"]} теперь {own_item["amt"]} шт.'
+        else:
+            self.basket[buyer_id].append(item)
+            return f'Добавлена позиция {item["name"]}, {item["amt"]} шт.'
 
-    def show_basket(self) -> str:
+    def show_basket(self, buyer_id: str) -> str:
         out_line = ''
-        for item in self.basket:
-            out_line += f'item id: {item["id"]}\namount: {item["amt"]}' \
-                        f'\n{"="*40}\n'
+        if self.basket[buyer_id]:
+            for item in self.basket[buyer_id]:
+                out_line += f'item id: {item["name"]}\namount: {item["amt"]}' \
+                            f'\n{"="*40}\n'
+        else:
+            out_line = 'Ваша корзинка всё ещё пуста. Положите в нее что-нибудь нужное.'
 
         return out_line
 
-    def empty_basket(self) -> [list, str]:
-        if not self.basket:
-            return 'Basket is empty yet'
-        local_pack = self.basket
-        self.basket = []
+    def show_position(self, buyer_id: str, pos: int):
+        if not self.basket[buyer_id]:
+            return 'Ваша корзинка всё ещё пуста. Положите в нее что-нибудь нужное.'
+        else:
+            return self.basket[buyer_id][pos]
+
+    def empty_basket(self, buyer_id: str) -> [list, str]:
+        if not self.basket[buyer_id]:
+            return 'Ваша корзинка всё ещё пуста. Положите в нее что-нибудь нужное.'
+        local_pack = self.basket[buyer_id]
+        self.basket[buyer_id] = []
         return local_pack
 
+    def remove_item(self, buyer_id: str, pos: int) -> [list, str]:
+        if not self.basket[buyer_id]:
+            return 'Ваша корзинка всё ещё пуста. Положите в нее что-нибудь нужное.'
+        rmv_item = self.basket[buyer_id].pop(pos)
+        return rmv_item
+
     def __str__(self) -> str:
-        return str(self.buyer_id)
+        return str(self.basket.keys())
 
 
 if __name__ == '__main__':

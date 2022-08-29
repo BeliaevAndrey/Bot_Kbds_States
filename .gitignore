@@ -3,3 +3,4 @@
 *.bckp
 /BtVenv/
 /.idea/
+config.py

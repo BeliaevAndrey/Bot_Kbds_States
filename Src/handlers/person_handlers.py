@@ -20,7 +20,6 @@ from joker import load_about_info, write_down_questionnaire, pick_up_questionnai
 
 amount_line = ''
 temp_var_for_transmission = []
-basket = []
 local_id = ''
 
 
@@ -163,8 +162,8 @@ async def answer_kbd_command(call: types.CallbackQuery):
 # ==  scroll showcase step by step I
 @dp.callback_query_handler(callback_catcher.filter(for_data='purchase'))
 async def answer_kbd_command(call: types.CallbackQuery, Basket_on_CB, User_on_CB):
-    print(Basket_on_CB.new(User_on_CB))     # TODO: print is actually redundant here
-    global local_id, basket
+    Basket_on_CB.new(User_on_CB)
+    global local_id
     local_id = call.data.split(':')[-1]
     if local_id != '':
         status, item_info = data_manager.get_item(int(local_id))
@@ -184,8 +183,7 @@ async def answer_kbd_command(call: types.CallbackQuery, Basket_on_CB, User_on_CB
 @dp.callback_query_handler(callback_catcher.filter(for_data='purchase'))
 @dp.callback_query_handler(callback_catcher.filter(for_data='scroll'))
 async def answer_kbd_command(call: types.CallbackQuery, User_on_CB, Basket_on_CB):
-    print(Basket_on_CB.new(User_on_CB))     # TODO: print is actually redundant here
-    print(Basket_on_CB.show_basket(User_on_CB))
+    Basket_on_CB.new(User_on_CB)
     global local_id
     local_id = call.data.split(':')[-1]
     status, item_info = data_manager.get_item(int(local_id))
@@ -212,10 +210,10 @@ async def answer_kbd_command(call: types.CallbackQuery):
                              message_id=call.message.message_id)
 
 
-# == call numeric keyboard
+# == numeric keyboard purchase section
 @dp.callback_query_handler(callback_catcher.filter(for_data='nums'))
 async def answer_kbd_command(call: types.CallbackQuery, User_on_CB, Basket_on_CB):
-    global amount_line, basket, local_id
+    global amount_line, local_id
     if local_id != '':
         status, item_info = data_manager.get_item(int(local_id))
         out_line = make_line(item_info)
@@ -234,7 +232,7 @@ async def answer_kbd_command(call: types.CallbackQuery, User_on_CB, Basket_on_CB
             tmp, amt = data_manager.pick_up_item(int(local_id), int(amount_line))
             if isinstance(tmp, dict):
                 tmp['amt'] = amt
-                basket.append(tmp)
+                # basket.append(tmp)
                 print(Basket_on_CB.add_item(User_on_CB, tmp))
                 out_line = 'Ok.'
                 del tmp
@@ -251,10 +249,6 @@ async def answer_kbd_command(call: types.CallbackQuery, User_on_CB, Basket_on_CB
     elif operand == 'clear_cur':
         out_line = ''
         amount_line = ''
-    elif operand == 'clear_all':
-        amount_line = ''
-        basket = []
-        out_line = 'You\'ve just emptied basket'
     else:
         out_line = ''
         amount_line += operand if operand.isdigit() else ''
@@ -265,44 +259,42 @@ async def answer_kbd_command(call: types.CallbackQuery, User_on_CB, Basket_on_CB
     await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
 
-# === call scroll-basket section
+# === call basket managing section
 @dp.callback_query_handler(callback_catcher.filter(for_data='bskt_scroll'))
 async def answer_kbd_command(call: types.CallbackQuery, User_on_CB, Basket_on_CB):
-    print(User_on_CB)
-    print(Basket_on_CB.show_basket(User_on_CB))
+    if User_on_CB not in Basket_on_CB.get_users():
+        Basket_on_CB.new(User_on_CB)
+    print(User_on_CB, Basket_on_CB.show_basket(User_on_CB))
     active_pos = 0
     status = 'Ok'
-    global basket
-    if not basket:
-        out_line = 'Корзина пуста. Положите в нее что-нибудь нужное.'
+    up_lim = Basket_on_CB.get_len(User_on_CB) - 1
+    # global basket
+    if Basket_on_CB.get_len(User_on_CB) == 0:
+        out_line = 'Ваша корзинка всё ещё пуста. Положите в нее что-нибудь нужное.'
     elif call.data.split(':')[-1] == 'clr_bskt':
-        for tmp in basket:
-            print(data_manager.add_item(tmp['id'], tmp['name'], tmp['description'], tmp['amt'], ))
-        basket = []
+        for tmp in Basket_on_CB.empty_basket(User_on_CB):
+            print(data_manager.add_item(tmp['id'], tmp['name'], tmp['description'], tmp['amt']))
         out_line = 'Корзина очищена.'
     elif call.data.split(':')[-1] == 'clr_pos':
-        tmp_b_cls = Basket_on_CB.remove_item(User_on_CB, active_pos)
-        print(tmp_b_cls)
-        tmp = basket.pop(active_pos)
+        tmp = Basket_on_CB.remove_item(User_on_CB, active_pos)
+        print(tmp)
         out_line = 'Позиция ' + tmp['name'] + ' удалена.'
         data_manager.add_item(tmp['id'], tmp['name'], tmp['description'], tmp['amt'])
         del tmp
     else:
-        item_info = Basket_on_CB.show_position(User_on_CB, active_pos)
-        print(f'func scroll bask\n{item_info}')
         active_pos = int(call.data.split(':')[-1])
-        item_info1 = basket[active_pos]
+        item_info = Basket_on_CB.show_position(User_on_CB, active_pos)
         status = 'Ok'
         if active_pos == 0:
             status = 'low'
-        elif active_pos == len(basket) - 1:
+        elif active_pos == up_lim:
             status = 'high'
-        out_line = make_line(item_info1)
+        out_line = make_line(item_info)
     await bot.send_message(text=out_line,
                            chat_id=call.message.chat.id,
                            reply_markup=basket_inline_keyboard(item_index=active_pos,
                                                                status=status,
-                                                               lim=(len(basket)-1)))
+                                                               lim=up_lim))
     await bot.delete_message(chat_id=call.message.chat.id,
                              message_id=call.message.message_id)
 

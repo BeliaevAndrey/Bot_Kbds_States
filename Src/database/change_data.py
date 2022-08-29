@@ -99,16 +99,18 @@ class BuyerBasket:
 
     def new(self, buyer_id: str) -> int:
         if buyer_id not in self.basket.keys():
-            print('NNNEEEEEEEWWWWWWWWWw')
+            print(f'New basket:: {buyer_id}')
             self.basket[buyer_id] = []
             return 0
         else:
             return 1
 
+    def get_users(self):
+        return self.basket.keys()
+
     def add_item(self, buyer_id, item: dict) -> str:
         for own_item in self.basket[buyer_id]:
-            print('KEYS:', item['id'], own_item.keys(), type(item['id']), type(own_item.keys()))
-            if item['id'] in own_item.keys():
+            if item['id'] == own_item['id']:
                 own_item['amt'] += item['amt']
                 return f'Кол-во позиции {item["name"]} теперь {own_item["amt"]} шт.'
         else:
@@ -120,7 +122,7 @@ class BuyerBasket:
         if self.basket[buyer_id]:
             for item in self.basket[buyer_id]:
                 out_line += f'item id: {item["name"]}\namount: {item["amt"]}' \
-                            f'\n{"="*40}\n'
+                            f'\n{"="*20}\n'
         else:
             out_line = 'Ваша корзинка всё ещё пуста. Положите в нее что-нибудь нужное.'
 
@@ -144,6 +146,9 @@ class BuyerBasket:
             return 'Ваша корзинка всё ещё пуста. Положите в нее что-нибудь нужное.'
         rmv_item = self.basket[buyer_id].pop(pos)
         return rmv_item
+
+    def get_len(self, buyer_id: str) -> int:
+        return len(self.basket[buyer_id])
 
     def __str__(self) -> str:
         return str(self.basket.keys())

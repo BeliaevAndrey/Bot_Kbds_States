@@ -4,3 +4,4 @@
 /BtVenv/
 /.idea/
 config.py
+/.pycache/
